@@ -62,3 +62,39 @@ def delete_sleep_data(sleep_id: str):
     # 데이터가 있으면 삭제
     doc_ref.delete()
     return {"message": f"ID {sleep_id} 데이터가 성공적으로 삭제되었습니다!"}
+
+@app.get("/sleep/analyze")
+def analyze_sleep():
+    # 1. Firebase에서 모든 수면 데이터 가져오기
+    docs = db.collection('sleep_records').stream()
+    
+    total_hours = 0
+    count = 0
+    
+    # 2. 데이터 하나씩 읽으면서 시간 더하기
+    for doc in docs:
+        data = doc.to_dict()
+        total_hours += data.get('sleep_hours', 0)
+        count += 1
+        
+    # 3. 데이터가 하나도 없는 경우 예외 처리
+    if count == 0:
+        return {"message": "분석할 수면 데이터가 없습니다. 먼저 데이터를 추가해주세요!"}
+        
+    # 4. 평균 수면 시간 계산 (소수점 첫째 자리까지)
+    avg_hours = round(total_hours / count, 1)
+    
+    # 5. 평균 시간에 따른 맞춤형 피드백 생성
+    if avg_hours < 7:
+        feedback = "수면이 부족해 보여요! 오늘은 조금 더 일찍 잠자리에 들어보세요. 🌙"
+    elif avg_hours <= 9:
+        feedback = "아주 훌륭합니다! 적절한 수면 시간을 잘 유지하고 계시네요. 👍"
+    else:
+        feedback = "수면 시간이 꽤 기네요! 너무 오래 자면 오히려 무기력해질 수 있으니 주의하세요. ☀️"
+        
+    # 6. 최종 결과 반환
+    return {
+        "총_기록_수": count,
+        "평균_수면시간": avg_hours,
+        "AI_피드백": feedback
+    }
