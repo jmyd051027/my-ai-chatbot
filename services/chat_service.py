@@ -15,7 +15,13 @@ def generate_answer(question: str):
     if not api_key:
         raise ValueError("OpenAI API 키가 없습니다.")
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(
+        api_key=api_key,
+        base_url=os.getenv(
+            "OPENAI_BASE_URL",
+            "https://copa.codyssey.kr/v1"
+        )
+    )
 
     # Firebase 수면 데이터 분석 결과 가져오기
     summary = get_summary()
@@ -39,18 +45,31 @@ def generate_answer(question: str):
 현재 수면 기록은 가상의 테스트 데이터입니다.
 """
 
-    # 수면 분석 결과와 사용자 질문 전달
-    response = client.responses.create(
+    # 교육장 전용 API 서버에 질문 전달
+    response = client.chat.completions.create(
         model=os.getenv("OPENAI_MODEL", "gpt-5-mini"),
-        instructions=instructions,
-        input=f"""
+        messages=[
+            {
+                "role": "system",
+                "content": instructions
+            },
+            {
+                "role": "user",
+                "content": f"""
 수면 데이터 분석 결과:
 {context}
 
 사용자 질문:
 {question}
-""",
-        max_output_tokens=1000
+"""
+            }
+        ],
+        max_completion_tokens=1000
     )
 
-    return response.output_text
+    answer = response.choices[0].message.content
+
+    if not answer:
+        raise ValueError("AI 답변이 비어 있습니다.")
+
+    return answer
