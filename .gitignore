@@ -5,6 +5,12 @@
 .env.*
 !.env.example
 
+# Vercel 배포 설정 파일 허용
+!frontend/vercel.json
+
+# 프론트엔드 자동 생성 설정 파일
+/frontend/config.js
+
 # Python 가상환경
 .venv/
 venv/

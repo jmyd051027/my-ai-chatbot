@@ -1,6 +1,6 @@
 
 // 1. 백엔드 서버 주소
-const API_BASE_URL = "https://sleep-ai-backend.onrender.com";
+const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;
 
 // 접근 비밀번호 임시 저장
 let accessKey = "";
@@ -74,7 +74,7 @@ async function authenticate(event) {
     authButton.textContent = "접속 확인 중...";
 
     authStatus.className = "";
-    authStatus.textContent = "서버에 접속하고 있습니다...";
+    authStatus.textContent = "서버에 접속하고 있습니다. 무료 서버의 첫 접속은 1분 이상 걸릴 수 있습니다. 잠시 기다려 주세요.";
 
     try {
         // 서버에서 접근 비밀번호 확인
