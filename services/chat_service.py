@@ -1,12 +1,14 @@
-
 import os
 import json
+import logging
 
 from openai import OpenAI
 from dotenv import load_dotenv
 from services.summary_service import get_summary
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 def generate_answer(question: str):
@@ -20,13 +22,13 @@ def generate_answer(question: str):
         base_url=os.getenv(
             "OPENAI_BASE_URL",
             "https://copa.codyssey.kr/v1"
-        )
+        ),
+        timeout=60.0
     )
 
     # Firebase 수면 데이터 분석 결과 가져오기
     summary = get_summary()
 
-    # 분석 결과를 문자열로 변환
     context = json.dumps(
         summary,
         ensure_ascii=False,
@@ -43,6 +45,7 @@ def generate_answer(question: str):
 의학적인 진단은 하지 마세요.
 친절하고 이해하기 쉬운 한국어로 답변하세요.
 현재 수면 기록은 가상의 테스트 데이터입니다.
+핵심 내용을 중심으로 간결하게 답변하세요.
 """
 
     # 교육장 전용 API 서버에 질문 전달
@@ -64,12 +67,26 @@ def generate_answer(question: str):
 """
             }
         ],
-        max_completion_tokens=1000
+        max_completion_tokens=4000
     )
 
-    answer = response.choices[0].message.content
+    if not response.choices:
+        raise ValueError("AI 응답 목록이 비어 있습니다.")
 
-    if not answer:
-        raise ValueError("AI 답변이 비어 있습니다.")
+    choice = response.choices[0]
+    answer = choice.message.content
 
-    return answer
+    # 빈 답변 발생 시 종료 원인 기록
+    if not answer or not answer.strip():
+        logger.error(
+            "AI 빈 답변 발생: finish_reason=%s, usage=%s",
+            choice.finish_reason,
+            response.usage
+        )
+
+        raise ValueError(
+            f"AI 답변이 비어 있습니다. "
+            f"종료 원인: {choice.finish_reason}"
+        )
+
+    return answer.strip()
