@@ -1,6 +1,6 @@
 
 // 1. 백엔드 서버 주소
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "https://sleep-ai-backend.onrender.com";
 
 // 접근 비밀번호 임시 저장
 let accessKey = "";
