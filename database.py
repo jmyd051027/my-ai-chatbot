@@ -1,13 +1,27 @@
+
+import os
+import json
 import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
 
-# 1. 우리가 방금 업로드한 비밀키 파일 연결
-cred = credentials.Certificate("firebase-key.json")
+from firebase_admin import credentials, firestore
+from dotenv import load_dotenv
 
-# 2. Firebase 앱 초기화 (서버가 재시작될 때 중복 실행되는 것을 방지)
+# 환경변수 불러오기
+load_dotenv()
+
+# Firebase 인증 정보 불러오기
+firebase_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+firebase_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
+
 if not firebase_admin._apps:
+    if firebase_json:
+        cred = credentials.Certificate(json.loads(firebase_json))
+    elif firebase_path:
+        cred = credentials.Certificate(firebase_path)
+    else:
+        raise ValueError("Firebase 인증 정보가 없습니다.")
+
     firebase_admin.initialize_app(cred)
 
-# 3. Firestore 데이터베이스 조종기(클라이언트) 생성
+# Firestore 데이터베이스 연결
 db = firestore.client()

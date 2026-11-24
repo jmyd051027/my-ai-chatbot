@@ -1,0 +1,318 @@
+
+/* 1. 전체 기본 디자인 */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Malgun Gothic", Arial, sans-serif;
+    background-color: #0f172a;
+    color: #e2e8f0;
+    line-height: 1.6;
+}
+
+/* 2. 상단 제목 */
+.header {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(
+        135deg, #1e1b4b, #0f172a
+    );
+    border-bottom: 1px solid #334155;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 36px;
+    color: #c7d2fe;
+}
+
+.header p {
+    margin: 8px 0 0;
+    color: #94a3b8;
+}
+
+/* 3. 전체 콘텐츠 배치 */
+.container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+section {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 21px;
+    color: #f1f5f9;
+}
+
+/* 4. 수면 통계 카드 */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.stat-card {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 20px 10px;
+    text-align: center;
+}
+
+.stat-card p {
+    margin: 0;
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.stat-card h3 {
+    margin: 10px 0 0;
+    font-size: 26px;
+    color: #a5b4fc;
+}
+
+#stat-period {
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+#stat-trend {
+    padding: 12px;
+    background-color: #0f172a;
+    border-radius: 8px;
+    color: #a5b4fc;
+}
+
+/* 5. 챗봇 대화 영역 */
+.chat-messages {
+    height: 320px;
+    overflow-y: auto;
+    background-color: #0f172a;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.message {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.bot-message {
+    align-self: flex-start;
+    background-color: #334155;
+    color: #f1f5f9;
+}
+
+.user-message {
+    align-self: flex-end;
+    background-color: #4f46e5;
+    color: white;
+}
+
+#chat-form {
+    display: flex;
+    gap: 10px;
+}
+
+#question {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 6. 입력창 디자인 */
+input,
+textarea {
+    width: 100%;
+    padding: 12px;
+    background-color: #0f172a;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    color: #f1f5f9;
+    font-family: inherit;
+    font-size: 14px;
+    color-scheme: dark;
+}
+
+input:focus,
+textarea:focus {
+    outline: 2px solid #818cf8;
+    border-color: #818cf8;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #94a3b8;
+}
+
+textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+/* 7. 버튼 디자인 */
+button {
+    padding: 12px 20px;
+    background-color: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #4f46e5;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+button[hidden] {
+    display: none;
+}
+
+/* 8. 수면 기록 입력 영역 */
+#data-form {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+#data-form label {
+    font-size: 14px;
+    color: #cbd5e1;
+}
+
+#cancel-edit {
+    background-color: #475569;
+}
+
+/* 9. 수면 기록 테이블 */
+.table-wrapper {
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th,
+td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #334155;
+}
+
+th {
+    background-color: #0f172a;
+    color: #a5b4fc;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+}
+
+td {
+    color: #cbd5e1;
+    overflow-wrap: anywhere;
+}
+
+td button {
+    padding: 6px 10px;
+    margin: 2px;
+    font-size: 12px;
+}
+
+.delete-button {
+    background-color: #b91c1c;
+}
+
+.delete-button:hover {
+    background-color: #991b1b;
+}
+
+/* 10. 이전 대화 기록 */
+#conversation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: #94a3b8;
+}
+
+.conversation-item {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.conversation-item:hover {
+    border-color: #818cf8;
+}
+
+/* 11. 하단 안내 문구 */
+footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* 12. 스마트폰 반응형 디자인 */
+@media (max-width: 768px) {
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .container {
+        padding: 0 12px;
+    }
+
+    section {
+        padding: 16px;
+    }
+
+    .header h1 {
+        font-size: 28px;
+    }
+
+    .stat-card h3 {
+        font-size: 22px;
+    }
+
+    .chat-messages {
+        height: 280px;
+    }
+
+    th,
+    td {
+        padding: 8px;
+    }
+}

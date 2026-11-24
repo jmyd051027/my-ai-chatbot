@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Sleep AI - 수면 분석 챗봇</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <h1>🌙 Sleep AI</h1>
+        <p>나의 수면 데이터 분석 파트너</p>
+    </header>
+
+    <main class="container">
+
+        <!-- 수면 통계 영역 -->
+        <section class="summary-section">
+            <h2>📊 수면 데이터 요약</h2>
+
+            <div class="summary-grid">
+
+                <div class="stat-card">
+                    <p>전체 수면 기록</p>
+                    <h3 id="stat-count">-</h3>
+                </div>
+
+                <div class="stat-card">
+                    <p>평균 수면 시간</p>
+                    <h3 id="stat-mean">-</h3>
+                </div>
+
+                <div class="stat-card">
+                    <p>최소 수면 시간</p>
+                    <h3 id="stat-min">-</h3>
+                </div>
+
+                <div class="stat-card">
+                    <p>최대 수면 시간</p>
+                    <h3 id="stat-max">-</h3>
+                </div>
+
+            </div>
+
+            <p id="stat-period">분석 기간: -</p>
+            <p id="stat-trend">수면 추세: -</p>
+
+        </section>
+
+        <!-- AI 챗봇 영역 -->
+        <section class="chat-section">
+
+            <h2>🤖 AI 수면 상담</h2>
+
+            <div id="chat-messages"
+                 class="chat-messages"
+                 aria-live="polite">
+
+                <div class="message bot-message">
+                    안녕하세요! Sleep AI입니다.
+                    수면 데이터에 대해 질문해 주세요.
+                </div>
+
+            </div>
+
+            <form id="chat-form">
+
+                <input
+                    type="text"
+                    id="question"
+                    aria-label="수면 관련 질문"
+                    placeholder="수면에 대해 질문해 보세요..."
+                    maxlength="1000"
+                    required
+                >
+
+                <button type="submit" id="send-button">
+                    전송
+                </button>
+
+            </form>
+
+        </section>
+
+        <!-- 수면 기록 관리 영역 -->
+        <section class="data-section">
+
+            <h2>📝 수면 기록 관리</h2>
+
+            <form id="data-form">
+
+                <input type="hidden" id="data-id">
+
+                <label for="sleep-date">날짜</label>
+                <input
+                    type="date"
+                    id="sleep-date"
+                    required
+                >
+
+                <label for="sleep-value">수면 시간</label>
+                <input
+                    type="number"
+                    id="sleep-value"
+                    min="0"
+                    max="24"
+                    step="0.1"
+                    placeholder="예: 7.5"
+                    required
+                >
+
+                <label for="sleep-memo">메모</label>
+                <textarea
+                    id="sleep-memo"
+                    maxlength="500"
+                    placeholder="오늘의 수면 상태를 기록하세요."
+                ></textarea>
+
+                <button type="submit" id="save-button">
+                    기록 저장
+                </button>
+
+                <button type="button" id="cancel-edit" hidden>
+                    수정 취소
+                </button>
+
+            </form>
+
+            <div class="table-wrapper">
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th>수면 시간</th>
+                            <th>메모</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="data-list"></tbody>
+                </table>
+
+            </div>
+
+        </section>
+
+        <!-- 이전 대화 기록 영역 -->
+        <section class="history-section">
+
+            <h2>💬 이전 대화 기록</h2>
+
+            <div id="conversation-list">
+                저장된 대화 기록을 불러오는 영역입니다.
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Sleep AI | 수면 데이터 기반 AI 챗봇</p>
+        <p>교육용 프로젝트 · 의학적 진단을 제공하지 않습니다.</p>
+    </footer>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
