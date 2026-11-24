@@ -33,6 +33,11 @@ async function apiRequest(path, options = {}) {
         throw new Error("서버 접근 설정이 완료되지 않았습니다.");
     }
 
+    if (response.status === 429) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail);
+    }
+
     if (!response.ok) {
         throw new Error(`API 오류: ${response.status}`);
     }
