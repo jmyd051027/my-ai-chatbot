@@ -1,3 +1,4 @@
+
 import os
 import json
 import logging
@@ -29,14 +30,15 @@ def generate_answer(question: str):
     # Firebase 수면 데이터 분석 결과 가져오기
     summary = get_summary()
 
+    # 분석 결과를 JSON 문자열로 변환
     context = json.dumps(
         summary,
         ensure_ascii=False,
         indent=2
     )
 
-    # AI에게 전달할 지시사항
-    instructions = """
+    # 시스템 프롬프트에 데이터 요약 주입
+    instructions = f"""
 당신은 수면 데이터 분석 AI 챗봇입니다.
 
 제공된 수면 통계 데이터를 근거로 답변하세요.
@@ -46,6 +48,13 @@ def generate_answer(question: str):
 친절하고 이해하기 쉬운 한국어로 답변하세요.
 현재 수면 기록은 가상의 테스트 데이터입니다.
 핵심 내용을 중심으로 간결하게 답변하세요.
+
+아래는 Firebase에 저장된 수면 데이터의 분석 결과입니다.
+사용자의 질문에 답변할 때 이 데이터를 참고하세요.
+
+[수면 데이터 분석 결과]
+{context}
+[수면 데이터 분석 결과 끝]
 """
 
     # 교육장 전용 API 서버에 질문 전달
@@ -58,18 +67,13 @@ def generate_answer(question: str):
             },
             {
                 "role": "user",
-                "content": f"""
-수면 데이터 분석 결과:
-{context}
-
-사용자 질문:
-{question}
-"""
+                "content": question
             }
         ],
         max_completion_tokens=4000
     )
 
+    # 응답 목록 확인
     if not response.choices:
         raise ValueError("AI 응답 목록이 비어 있습니다.")
 
