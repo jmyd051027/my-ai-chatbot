@@ -2,19 +2,36 @@
 // 1. 백엔드 서버 주소
 const API_BASE_URL = "http://127.0.0.1:8000";
 
+// 접근 비밀번호 임시 저장
+let accessKey = "";
+
 
 // 2. 공통 API 요청 함수
 async function apiRequest(path, options = {}) {
+    if (!accessKey) {
+        throw new Error("접근 비밀번호를 입력해 주세요.");
+    }
+
     const response = await fetch(
         `${API_BASE_URL}${path}`,
         {
             ...options,
+            cache: "no-store",
             headers: {
                 "Content-Type": "application/json",
-                ...options.headers
+                ...options.headers,
+                "X-Access-Key": accessKey
             }
         }
     );
+
+    if (response.status === 401) {
+        throw new Error("접근 비밀번호가 올바르지 않습니다.");
+    }
+
+    if (response.status === 503) {
+        throw new Error("서버 접근 설정이 완료되지 않았습니다.");
+    }
 
     if (!response.ok) {
         throw new Error(`API 오류: ${response.status}`);
@@ -24,55 +41,136 @@ async function apiRequest(path, options = {}) {
 }
 
 
-// 3. 수면 통계 불러오기
+// 3. 서비스 기능 활성화 및 비활성화
+function setServiceEnabled(enabled) {
+    const sections = document.querySelectorAll(
+        ".summary-section, .chat-section, .data-section, .history-section"
+    );
+
+    for (const section of sections) {
+        section.style.display = enabled ? "" : "none";
+    }
+}
+
+
+// 4. 접근 비밀번호 인증
+async function authenticate(event) {
+    event.preventDefault();
+
+    const keyInput = document.getElementById("access-key");
+    const authButton = document.getElementById("auth-button");
+    const authStatus = document.getElementById("auth-status");
+
+    const enteredKey = keyInput.value.trim();
+
+    if (!enteredKey || authButton.disabled) {
+        return;
+    }
+
+    accessKey = enteredKey;
+
+    authButton.disabled = true;
+    keyInput.disabled = true;
+    authButton.textContent = "접속 확인 중...";
+
+    authStatus.className = "";
+    authStatus.textContent = "서버에 접속하고 있습니다...";
+
+    try {
+        // 서버에서 접근 비밀번호 확인
+        const summary = await apiRequest("/api/data/summary");
+
+        authStatus.className = "success";
+        authStatus.textContent =
+            "접속에 성공했습니다. Sleep AI를 이용해 주세요!";
+
+        keyInput.value = "";
+        authButton.textContent = "접속 완료";
+
+        // 인증 성공 후 서비스 표시
+        setServiceEnabled(true);
+
+        // 수면 통계 및 데이터 불러오기
+        renderSummary(summary);
+
+        await Promise.all([
+            loadData(),
+            loadConversations()
+        ]);
+
+    } catch (error) {
+        accessKey = "";
+
+        setServiceEnabled(false);
+
+        authStatus.className = "error";
+
+        if (error instanceof TypeError) {
+            authStatus.textContent =
+                "서버에 연결할 수 없습니다. 서버 상태를 확인해 주세요.";
+        } else {
+            authStatus.textContent = error.message;
+        }
+
+        authButton.disabled = false;
+        keyInput.disabled = false;
+        authButton.textContent = "접속하기";
+
+        keyInput.value = "";
+        keyInput.focus();
+    }
+}
+
+
+// 5. 수면 통계 화면 표시
+function renderSummary(summary) {
+    document.getElementById("stat-count").textContent =
+        `${summary.count}개`;
+
+    document.getElementById("stat-mean").textContent =
+        summary.mean === null
+            ? "-"
+            : `${summary.mean}시간`;
+
+    document.getElementById("stat-min").textContent =
+        summary.min === null
+            ? "-"
+            : `${summary.min}시간`;
+
+    document.getElementById("stat-max").textContent =
+        summary.max === null
+            ? "-"
+            : `${summary.max}시간`;
+
+    document.getElementById("stat-period").textContent =
+        summary.count > 0
+            ? `분석 기간: ${summary.start_date} ~ ${summary.end_date}`
+            : "분석 기간: 기록 없음";
+
+    document.getElementById("stat-trend").textContent =
+        `수면 추세: ${summary.trend}`;
+}
+
+
+// 6. 수면 통계 불러오기
 async function loadSummary() {
     try {
         const summary = await apiRequest(
             "/api/data/summary"
         );
 
-        document.getElementById("stat-count").textContent =
-            `${summary.count}개`;
-
-        document.getElementById("stat-mean").textContent =
-            summary.mean === null
-                ? "-"
-                : `${summary.mean}시간`;
-
-        document.getElementById("stat-min").textContent =
-            summary.min === null
-                ? "-"
-                : `${summary.min}시간`;
-
-        document.getElementById("stat-max").textContent =
-            summary.max === null
-                ? "-"
-                : `${summary.max}시간`;
-
-        document.getElementById("stat-period").textContent =
-            summary.count > 0
-                ? `분석 기간: ${summary.start_date} ~ ${summary.end_date}`
-                : "분석 기간: 기록 없음";
-
-        document.getElementById("stat-trend").textContent =
-            `수면 추세: ${summary.trend}`;
+        renderSummary(summary);
 
     } catch (error) {
         console.error("수면 통계 조회 실패:", error);
 
         document.getElementById("stat-trend").textContent =
-            "서버에 연결할 수 없습니다.";
+            error.message;
     }
 }
 
 
-// 4. 웹페이지가 열리면 자동 실행
-document.addEventListener("DOMContentLoaded", () => {
-    loadSummary();
-});
-
-
-// 5. 수면 기록 목록 불러오기
+// 7. 수면 기록 목록 불러오기
 async function loadData() {
     const dataList = document.getElementById("data-list");
 
@@ -81,13 +179,18 @@ async function loadData() {
 
         dataList.replaceChildren();
 
+        if (records.length === 0) {
+            dataList.innerHTML =
+                '<tr><td colspan="4">저장된 수면 기록이 없습니다.</td></tr>';
+            return;
+        }
+
         // 최신 날짜부터 표시
         records.reverse();
 
         for (const record of records) {
             const row = document.createElement("tr");
 
-            // 날짜, 수면 시간, 메모 표시
             for (const value of [
                 record.date,
                 `${record.value}시간`,
@@ -100,13 +203,16 @@ async function loadData() {
 
             // 수정 버튼
             const editButton = document.createElement("button");
+            editButton.type = "button";
             editButton.textContent = "수정";
+
             editButton.addEventListener("click", () => {
                 editData(record);
             });
 
             // 삭제 버튼
             const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
             deleteButton.textContent = "삭제";
             deleteButton.className = "delete-button";
 
@@ -126,14 +232,19 @@ async function loadData() {
         console.error("수면 기록 조회 실패:", error);
 
         dataList.innerHTML =
-            '<tr><td colspan="4">서버에 연결할 수 없습니다.</td></tr>';
+            '<tr><td colspan="4">수면 기록을 불러오지 못했습니다.</td></tr>';
     }
 }
 
 
-// 6. 수면 기록 추가 및 수정
+// 8. 수면 기록 추가 및 수정
 async function saveData(event) {
     event.preventDefault();
+
+    if (!accessKey) {
+        alert("먼저 서비스에 접속해 주세요.");
+        return;
+    }
 
     const id = document.getElementById("data-id").value;
 
@@ -146,6 +257,11 @@ async function saveData(event) {
     };
 
     const saveButton = document.getElementById("save-button");
+
+    if (saveButton.disabled) {
+        return;
+    }
+
     saveButton.disabled = true;
 
     try {
@@ -173,7 +289,8 @@ async function saveData(event) {
 
     } catch (error) {
         console.error("수면 기록 저장 실패:", error);
-        alert("저장에 실패했습니다. 서버 연결을 확인해 주세요.");
+
+        alert(`저장 실패: ${error.message}`);
 
     } finally {
         saveButton.disabled = false;
@@ -181,7 +298,7 @@ async function saveData(event) {
 }
 
 
-// 7. 수면 기록 수정 준비
+// 9. 수면 기록 수정 준비
 function editData(record) {
     document.getElementById("data-id").value =
         record.id;
@@ -207,8 +324,13 @@ function editData(record) {
 }
 
 
-// 8. 수면 기록 삭제
+// 10. 수면 기록 삭제
 async function deleteData(id) {
+    if (!accessKey) {
+        alert("먼저 서비스에 접속해 주세요.");
+        return;
+    }
+
     const confirmed = confirm(
         "이 수면 기록을 삭제하시겠습니까?"
     );
@@ -231,12 +353,13 @@ async function deleteData(id) {
 
     } catch (error) {
         console.error("수면 기록 삭제 실패:", error);
-        alert("삭제에 실패했습니다.");
+
+        alert(`삭제 실패: ${error.message}`);
     }
 }
 
 
-// 9. 입력창 초기화
+// 11. 입력창 초기화
 function resetDataForm() {
     document.getElementById("data-form").reset();
 
@@ -250,19 +373,7 @@ function resetDataForm() {
 }
 
 
-// 10. 수면 기록 관리 기능 연결
-document.addEventListener("DOMContentLoaded", () => {
-    loadData();
-
-    document.getElementById("data-form")
-        .addEventListener("submit", saveData);
-
-    document.getElementById("cancel-edit")
-        .addEventListener("click", resetDataForm);
-});
-
-
-// 11. 채팅 말풍선 추가
+// 12. 채팅 말풍선 추가
 function addMessage(text, role) {
     const chatMessages =
         document.getElementById("chat-messages");
@@ -274,7 +385,6 @@ function addMessage(text, role) {
 
     chatMessages.appendChild(message);
 
-    // 가장 최근 메시지로 자동 스크롤
     chatMessages.scrollTop =
         chatMessages.scrollHeight;
 
@@ -282,9 +392,14 @@ function addMessage(text, role) {
 }
 
 
-// 12. AI에게 질문 전송
+// 13. AI에게 질문 전송
 async function sendQuestion(event) {
     event.preventDefault();
+
+    if (!accessKey) {
+        alert("먼저 서비스에 접속해 주세요.");
+        return;
+    }
 
     const questionInput =
         document.getElementById("question");
@@ -309,7 +424,6 @@ async function sendQuestion(event) {
 
     sendButton.textContent = "답변 중...";
 
-    // AI 답변 대기 메시지
     const loadingMessage = addMessage(
         "수면 데이터를 분석하고 있습니다...",
         "bot"
@@ -333,10 +447,9 @@ async function sendQuestion(event) {
         console.error("AI 질문 전송 실패:", error);
 
         loadingMessage.textContent =
-            "서버에 연결할 수 없거나 답변 처리에 실패했습니다.";
+            `답변 처리에 실패했습니다. ${error.message}`;
 
     } finally {
-        // 입력창과 전송 버튼 다시 활성화
         sendButton.disabled = false;
         questionInput.disabled = false;
 
@@ -351,13 +464,6 @@ async function sendQuestion(event) {
             chatMessages.scrollHeight;
     }
 }
-
-
-// 13. 챗봇 전송 기능 연결
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("chat-form")
-        .addEventListener("submit", sendQuestion);
-});
 
 
 // 14. 이전 대화 목록 불러오기
@@ -384,11 +490,9 @@ async function loadConversations() {
             item.type = "button";
             item.className = "conversation-item";
 
-            // 질문 표시
             const question = document.createElement("div");
             question.textContent = conversation.question;
 
-            // 대화 생성 시간 표시
             const time = document.createElement("small");
 
             time.textContent = new Date(
@@ -397,7 +501,6 @@ async function loadConversations() {
 
             item.append(question, time);
 
-            // 클릭하면 해당 대화 불러오기
             item.addEventListener("click", () => {
                 loadConversation(conversation.id);
             });
@@ -409,7 +512,7 @@ async function loadConversations() {
         console.error("대화 목록 조회 실패:", error);
 
         conversationList.textContent =
-            "서버에 연결할 수 없습니다.";
+            "대화 기록을 불러오지 못했습니다.";
     }
 }
 
@@ -419,7 +522,7 @@ async function loadConversation(id) {
     const sendButton =
         document.getElementById("send-button");
 
-    if (sendButton.disabled) {
+    if (!accessKey || sendButton.disabled) {
         return;
     }
 
@@ -433,14 +536,11 @@ async function loadConversation(id) {
         const chatMessages =
             document.getElementById("chat-messages");
 
-        // 기존 화면의 말풍선 초기화
         chatMessages.replaceChildren();
 
-        // 저장된 질문과 답변 표시
         addMessage(conversation.question, "user");
         addMessage(conversation.answer, "bot");
 
-        // 채팅창으로 화면 이동
         document.querySelector(".chat-section")
             .scrollIntoView({
                 behavior: "smooth"
@@ -457,8 +557,25 @@ async function loadConversation(id) {
 }
 
 
-// 16. 웹페이지가 열리면 대화 목록 조회
+// 16. 웹페이지 초기 설정
 document.addEventListener("DOMContentLoaded", () => {
-    loadConversations();
-});
 
+    // 인증 전에는 서비스 화면 숨기기
+    setServiceEnabled(false);
+
+    // 접근 비밀번호 인증 연결
+    document.getElementById("auth-form")
+        .addEventListener("submit", authenticate);
+
+    // 수면 기록 저장 기능 연결
+    document.getElementById("data-form")
+        .addEventListener("submit", saveData);
+
+    // 수면 기록 수정 취소 기능 연결
+    document.getElementById("cancel-edit")
+        .addEventListener("click", resetDataForm);
+
+    // AI 챗봇 전송 기능 연결
+    document.getElementById("chat-form")
+        .addEventListener("submit", sendQuestion);
+});

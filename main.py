@@ -1,11 +1,12 @@
 
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from routers.data_router import router as data_router
 from routers.chat_router import router as chat_router
+from security.auth import verify_access
 
 # 환경변수 불러오기
 load_dotenv()
@@ -36,11 +37,17 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# 수면 데이터 API 연결
-app.include_router(data_router)
+# 수면 데이터 API 연결 및 접근 권한 검사
+app.include_router(
+    data_router,
+    dependencies=[Depends(verify_access)]
+)
 
-# AI 챗봇 API 연결
-app.include_router(chat_router)
+# AI 챗봇 API 연결 및 접근 권한 검사
+app.include_router(
+    chat_router,
+    dependencies=[Depends(verify_access)]
+)
 
 
 # 서버 상태 확인

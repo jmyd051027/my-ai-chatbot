@@ -20,6 +20,34 @@
 
     <main class="container">
 
+        <!-- 접근 비밀번호 입력 영역 -->
+        <section class="auth-section">
+            <h2>🔐 서비스 접속</h2>
+
+            <form id="auth-form">
+                <label for="access-key">
+                    접근 비밀번호
+                </label>
+
+                <input
+                    type="password"
+                    id="access-key"
+                    placeholder="접근 비밀번호를 입력하세요"
+                    autocomplete="off"
+                    required
+                >
+
+                <button type="submit" id="auth-button">
+                    접속하기
+                </button>
+            </form>
+
+            <p id="auth-status" aria-live="polite">
+                서비스를 이용하려면 비밀번호를 입력해 주세요.
+            </p>
+        </section>
+
+
         <!-- 수면 통계 영역 -->
         <section class="summary-section">
             <h2>📊 수면 데이터 요약</h2>
